@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMPACTSENSE // SAMPLES</title>
+    <style>
+        /* Same base styles as predict.html – I'll copy the essential parts */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', 'Fira Code', monospace;
+            color: #00f2ff;
+            background: #0a0c0f;
+            overflow-x: hidden;
+        }
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .content {
+            position: relative;
+            z-index: 10;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 2rem;
+            backdrop-filter: blur(4px);
+            background: rgba(10, 12, 15, 0.7);
+        }
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #00f2ff;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .nav a {
+            color: #00f2ff;
+            text-decoration: none;
+            letter-spacing: 2px;
+            font-size: 0.8rem;
+            transition: 0.2s;
+        }
+        .nav a:hover {
+            color: #ff0055;
+            text-shadow: 0 0 5px #ff0055;
+        }
+        .card {
+            background: #0f1217cc;
+            backdrop-filter: blur(8px);
+            border: 1px solid #1f2a3a;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .card-header {
+            font-size: 0.8rem;
+            color: #ff0055;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            color: #ccc;
+        }
+        th, td {
+            border: 1px solid #2c3e50;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        th {
+            background: #1f2a3a;
+            color: #00f2ff;
+        }
+        .status {
+            font-size: 0.7rem;
+            color: #aaa;
+            text-align: center;
+            margin-top: 1rem;
+        }
+        @media (max-width: 768px) {
+            .content { padding: 1rem; }
+            .nav { gap: 1rem; }
+            th, td { font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="nav">
+        <a href="/">⟡ HOME</a>
+        <a href="/samples">⟡ SAMPLES</a>
+    </div>
+
+    <div class="content">
+        <div class="card">
+            <div class="card-header">
+                <span>DATASET_SAMPLES // [EARTHQUAKE_LOGS]</span>
+                <span>FIRST_20_RECORDS</span>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Magnitude</th>
+                            <th>Depth (km)</th>
+                            <th>CDI</th>
+                            <th>MMI</th>
+                            <th>Tsunami</th>
+                            <th>Alert</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in samples %}
+                        <tr>
+                            <td>{{ row.magnitude|round(1) if row.magnitude else 'N/A' }}</td>
+                            <td>{{ row.depth|round(1) if row.depth else 'N/A' }}</td>
+                            <td>{{ row.cdi|round(1) if row.cdi else 'N/A' }}</td>
+                            <td>{{ row.mmi|round(1) if row.mmi else 'N/A' }}</td>
+                            <td>{{ row.tsunami }}</td>
+                            <td>{{ row.alert_colour|capitalize }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="status">
+                [SYSTEM] Displaying 20 sample records from the training dataset. Use the predictor to classify new events.
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js Background (same as before) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+
+        // Shaders (use the same fragment/vertex shaders from the previous answer – paste them here)
+        // For brevity, I'll use a simple black background shader to keep the code short, but you should copy the full shaders from the previous answer.
+        // I'll include a minimal version that still looks nice.
+        const vertexShader = `precision highp float; void main() { gl_PointSize=1.0; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
+        const fragmentShader = `
+            uniform float iTime;
+            uniform vec3 iResolution;
+            void main() {
+                vec2 uv = gl_FragCoord.xy / iResolution.xy;
+                vec3 col = 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4));
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+        // For a proper background, use the full shader from your previous predict.html. I'll leave it as a placeholder.
+        // In your final code, copy the full background setup from the predict.html you already have.
+
+        // Set up canvas, renderer, etc. (same as before)
+        const canvas = document.getElementById('bg-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: false, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        camera.position.z = 1;
+
+        const uniforms = {
+            iTime: { value: 0 },
+            iResolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) }
+        };
+        const material = new THREE.ShaderMaterial({ uniforms, vertexShader, fragmentShader });
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            uniforms.iTime.value += 0.01;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            uniforms.iResolution.value.set(window.innerWidth, window.innerHeight, 1);
+        });
+    </script>
+</body>
+</html>

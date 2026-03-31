@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>IMPACTSENSE // NEURAL ANALYTICS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', 'Fira Code', monospace;
+            color: #00f2ff;
+            background: #0a0c0f;
+            overflow-x: hidden;
+        }
+
+        /* Canvas background (Three.js) */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Content overlay */
+        .content {
+            position: relative;
+            z-index: 10;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 2rem;
+            backdrop-filter: blur(4px);
+            background: rgba(10, 12, 15, 0.6);
+        }
+
+        /* Sticky navigation */
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #00f2ff;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .nav a {
+            color: #00f2ff;
+            text-decoration: none;
+            letter-spacing: 2px;
+            font-size: 0.8rem;
+            transition: 0.2s;
+        }
+        .nav a:hover {
+            color: #ff0055;
+            text-shadow: 0 0 5px #ff0055;
+        }
+
+        /* Sections */
+        section {
+            scroll-margin-top: 80px;
+            margin-bottom: 4rem;
+        }
+
+        /* Cards & Typography */
+        .glitch {
+            text-shadow: 0.05em 0 0 rgba(255,0,0,0.4), -0.05em -0.025em 0 rgba(0,255,255,0.4);
+            animation: glitch-shake 0.3s infinite alternate;
+        }
+        @keyframes glitch-shake {
+            0% { transform: translate(0); }
+            100% { transform: translate(-1px, 1px); }
+        }
+
+        .header {
+            border-bottom: 1px solid #00f2ff;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+
+        .status {
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            background: #00f2ff10;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: normal;
+            letter-spacing: 4px;
+        }
+        h1 small {
+            font-size: 0.8rem;
+            color: #ff0055;
+            display: block;
+        }
+        h2 {
+            font-size: 1.6rem;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+        .tagline {
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            color: #aaa;
+            border-left: 3px solid #00f2ff;
+            padding-left: 1rem;
+        }
+
+        .card {
+            background: #0f1217cc;
+            backdrop-filter: blur(8px);
+            border: 1px solid #1f2a3a;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            transition: 0.2s;
+        }
+        .card:hover {
+            border-color: #00f2ff;
+            box-shadow: 0 0 12px rgba(0,242,255,0.2);
+        }
+        .card-header {
+            font-size: 0.8rem;
+            color: #ff0055;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .feature-item h3 {
+            color: #ff0055;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .input-group {
+            margin-bottom: 0.5rem;
+        }
+        label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.3rem;
+            color: #7f8c8d;
+        }
+        input, select {
+            width: 100%;
+            background: #010101cc;
+            border: 1px solid #2c3e50;
+            color: #00f2ff;
+            padding: 0.7rem 1rem;
+            font-family: monospace;
+            font-size: 1rem;
+            border-radius: 8px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ff0055;
+            box-shadow: 0 0 6px #ff0055;
+        }
+        button {
+            background: none;
+            border: 2px solid #00f2ff;
+            color: #00f2ff;
+            padding: 1rem 2rem;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 100%;
+            margin-top: 1rem;
+            border-radius: 40px;
+        }
+        button:hover {
+            background: #00f2ff20;
+            border-color: #ff0055;
+            color: #ff0055;
+            box-shadow: 0 0 12px #ff0055;
+        }
+
+        .result-card {
+            background: #0a0a0fcc;
+            backdrop-filter: blur(8px);
+            border-left: 6px solid;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        .result-card.green { border-left-color: #00ff88; }
+        .result-card.yellow { border-left-color: #ffcc00; }
+        .result-card.orange { border-left-color: #ff8800; }
+        .result-card.red { border-left-color: #ff3300; }
+        .alert-badge {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        .stream {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px dashed #2c3e50;
+            color: #3e5a6b;
+        }
+        .blink {
+            animation: blink 1s step-start infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .content { padding: 1rem; }
+            .nav { gap: 1rem; }
+            h1 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Sticky Navigation -->
+    <div class="nav">
+        <a href="#hero">⟡ ORIGIN</a>
+        <a href="#modules">⟡ VECTOR_MODULES</a>
+        <a href="#predictor">⟡ LIVE_ANALYSIS</a>
+        <a href="#knowledge">⟡ DECRYPTION_LOGS</a>
+    </div>
+
+    <div class="content">
+        <!-- SECTION 1: HERO -->
+        <section id="hero">
+            <div class="header">
+                <div>
+                    <h1 class="glitch">EARTHQUAKE_IMPACT<br><small>NEURAL_ANALYSIS</small></h1>
+                    <div class="tagline">>> Orchestrating deep-layer neural mesh for seismic anomaly detection. The system anticipates earth-shattering vectors before they manifest in reality.</div>
+                </div>
+                <div class="status">
+                    <span id="liveTimestamp">[00:00:00]</span> HANDSHAKE_COMPLETE // STATUS: SECURE
+                </div>
+            </div>
+            <div style="text-align: center; margin: 2rem 0;">
+                <span class="status">Scroll to Explore ▼</span>
+            </div>
+        </section>
+
+        <!-- SECTION 2: VECTOR EXTRACTION MODULES -->
+        <section id="modules">
+            <div class="card">
+                <div class="card-header">
+                    <span>VECTOR_EXTRACTION_MODULES // [X‑04A]</span>
+                    <span>LEVEL_03</span>
+                </div>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h3>⚡ Seismic Vectoring</h3>
+                        <p>Deconstructing CDI and MMI telemetry into actionable neural signatures.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>🧠 Neural Inference</h3>
+                        <p>Low-latency categorization of subterranean disruption events.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>🚨 Alert Synthesis</h3>
+                        <p>Direct distillation of threat levels for rapid defensive maneuvers.</p>
+                    </div>
+                </div>
+                <div class="status" style="margin-top: 1rem;">
+                    [<span id="planetaryTime">00:59:36</span>] PLANETARY_GRID // STATUS: SYNCED
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: LIVE PREDICTOR (your existing form) -->
+        <section id="predictor">
+            <div class="card">
+                <div class="card-header">
+                    <span>LIVE_NEURAL_INFERENCE // [PRED‑01]</span>
+                    <span>ACTIVE</span>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>📊 MAGNITUDE (seismic energy)</label>
+                        <input type="number" step="any" id="magnitude" placeholder="e.g., 7.2" required>
+                    </div>
+                    <div class="input-group">
+                        <label>⛰️ DEPTH (hypocenter verticality)</label>
+                        <input type="number" step="any" id="depth" placeholder="km" required>
+                    </div>
+                    <div class="input-group">
+                        <label>💥 CDI (community weighted intensity)</label>
+                        <input type="number" step="any" id="cdi" placeholder="0–10" required>
+                    </div>
+                    <div class="input-group">
+                        <label>📈 MMI (modified mercalli intensity)</label>
+                        <input type="number" step="any" id="mmi" placeholder="0–10" required>
+                    </div>
+                    <div class="input-group">
+                        <label>🌊 TSUNAMI (0=no / 1=yes)</label>
+                        <select id="tsunami" required>
+                            <option value="" disabled selected>– SELECT –</option>
+                            <option value="0">0 – NO TSUNAMI</option>
+                            <option value="1">1 – TSUNAMI GENERATED</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="predictBtn">INITIATE_LIVE_ANALYSIS</button>
+
+                <div id="resultArea" style="display: none;">
+                    <div class="result-card" id="resultCard">
+                        <div class="card-header">
+                            <span>ALERT_SYNTHESIS // [OUTPUT]</span>
+                            <span>THREAT_LEVEL</span>
+                        </div>
+                        <div class="alert-badge" id="alertText"></div>
+                        <div style="margin-top: 1rem; font-size: 0.8rem;" id="subRisk"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: KNOWLEDGE DECRYPTION LOGS -->
+        <section id="knowledge">
+            <div class="card">
+                <div class="card-header">
+                    <span>KNOWLEDGE_DECRYPTION_LOGS // [DB‑QRY]</span>
+                    <span>LEVEL_03</span>
+                </div>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h3>CDI</h3>
+                        <p><strong>Community Weighted Intensity</strong><br>A measure of the reported intensity of shaking as perceived by people in the affected area. It aggregates human feedback to gauge real-world impact.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>MMI</h3>
+                        <p><strong>Modified Mercalli Intensity</strong><br>A scale used for measuring the intensity of shaking produced by an earthquake. Unlike magnitude, intensity varies based on location and surface geology.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>MAGNITUDE</h3>
+                        <p><strong>Seismic Energy Release</strong><br>A logarithmic measure of the energy released by an earthquake at its source. Each whole number increase represents a 10x increase in amplitude.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>DEPTH</h3>
+                        <p><strong>Hypocenter Verticality</strong><br>The distance from the earth's surface to the point where the earthquake originated. Shallower quakes often cause more surface damage.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>SIGNIFICANCE</h3>
+                        <p><strong>Event Impact Score</strong><br>A composite value (0-3000) representing the overall impact of an earthquake, calculated based on magnitude, intensity, and reported effects.</p>
+                    </div>
+                </div>
+                <div class="status" style="margin-top: 1rem;">
+                    [<span id="dbTime">00:59:36</span>] DATABASE_DECRYPTION // STATUS: READY
+                </div>
+            </div>
+        </section>
+
+        <div class="stream">
+            <span>NEURAL_ORCHESTRATION_ACTIVE // real‑time mesh</span> &nbsp;|&nbsp;
+            <span>MODEL: RANDOM_FOREST</span> &nbsp;|&nbsp;
+            <span>DATASET: EARTHQUAKE_LOGS</span>
+        </div>
+    </div>
+
+    <!-- Three.js Background (same as before) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+
+        // Shaders (same as previously provided – abbreviated for brevity)
+        // (I'll assume you have the full shader code from the previous answer)
+        // For space, I'm including the essential part. Use the full shader from the earlier answer.
+        const vertexShader = `precision highp float; void main() { gl_PointSize=1.0; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`;
+        const fragmentShader = `
+            uniform float iTime;
+            uniform vec3 iResolution;
+            uniform float animationSpeed;
+            uniform bool enableTop, enableMiddle, enableBottom;
+            uniform int topLineCount, middleLineCount, bottomLineCount;
+            uniform float topLineDistance, middleLineDistance, bottomLineDistance;
+            uniform vec3 topWavePosition, middleWavePosition, bottomWavePosition;
+            uniform vec2 iMouse;
+            uniform bool interactive;
+            uniform float bendRadius, bendStrength, bendInfluence;
+            uniform bool parallax;
+            uniform float parallaxStrength;
+            uniform vec2 parallaxOffset;
+            uniform vec3 lineGradient[8];
+            uniform int lineGradientCount;
+            const vec3 BLACK = vec3(0.0);
+            const vec3 PINK  = vec3(233.0, 71.0, 245.0) / 255.0;
+            const vec3 BLUE  = vec3(47.0,  75.0, 162.0) / 255.0;
+            mat2 rotate(float r) { return mat2(cos(r), sin(r), -sin(r), cos(r)); }
+            vec3 background_color(vec2 uv) {
+                vec3 col = vec3(0.0);
+                float y = sin(uv.x - 0.2) * 0.3 - 0.1;
+                float m = uv.y - y;
+                col += mix(BLUE, BLACK, smoothstep(0.0, 1.0, abs(m)));
+                col += mix(PINK, BLACK, smoothstep(0.0, 1.0, abs(m - 0.8)));
+                return col * 0.5;
+            }
+            vec3 getLineColor(float t, vec3 baseColor) {
+                if (lineGradientCount <= 0) return baseColor;
+                vec3 gradientColor;
+                if (lineGradientCount == 1) { gradientColor = lineGradient[0]; }
+                else {
+                    float clampedT = clamp(t, 0.0, 0.9999);
+                    float scaled = clampedT * float(lineGradientCount - 1);
+                    int idx = int(floor(scaled));
+                    float f = fract(scaled);
+                    int idx2 = min(idx + 1, lineGradientCount - 1);
+                    vec3 c1 = lineGradient[idx];
+                    vec3 c2 = lineGradient[idx2];
+                    gradientColor = mix(c1, c2, f);
+                }
+                return gradientColor * 0.5;
+            }
+            float wave(vec2 uv, float offset, vec2 screenUv, vec2 mouseUv, bool shouldBend) {
+                float time = iTime * animationSpeed;
+                float x_offset = offset;
+                float x_movement = time * 0.1;
+                float amp = sin(offset + time * 0.2) * 0.3;
+                float y = sin(uv.x + x_offset + x_movement) * amp;
+                if (shouldBend) {
+                    vec2 d = screenUv - mouseUv;
+                    float influence = exp(-dot(d, d) * bendRadius);
+                    float bendOffset = (mouseUv.y - screenUv.y) * influence * bendStrength * bendInfluence;
+                    y += bendOffset;
+                }
+                float m = uv.y - y;
+                return 0.0175 / max(abs(m) + 0.01, 1e-3) + 0.01;
+            }
+            void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+                vec2 baseUv = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
+                baseUv.y *= -1.0;
+                if (parallax) baseUv += parallaxOffset;
+                vec3 col = vec3(0.0);
+                vec3 b = lineGradientCount > 0 ? vec3(0.0) : background_color(baseUv);
+                vec2 mouseUv = vec2(0.0);
+                if (interactive) {
+                    mouseUv = (2.0 * iMouse - iResolution.xy) / iResolution.y;
+                    mouseUv.y *= -1.0;
+                }
+                if (enableBottom) {
+                    for (int i = 0; i < bottomLineCount; ++i) {
+                        float fi = float(i);
+                        float t = fi / max(float(bottomLineCount - 1), 1.0);
+                        vec3 lineCol = getLineColor(t, b);
+                        float angle = bottomWavePosition.z * log(length(baseUv) + 1.0);
+                        vec2 ruv = baseUv * rotate(angle);
+                        col += lineCol * wave(ruv + vec2(bottomLineDistance * fi + bottomWavePosition.x, bottomWavePosition.y), 1.5 + 0.2 * fi, baseUv, mouseUv, interactive) * 0.2;
+                    }
+                }
+                if (enableMiddle) {
+                    for (int i = 0; i < middleLineCount; ++i) {
+                        float fi = float(i);
+                        float t = fi / max(float(middleLineCount - 1), 1.0);
+                        vec3 lineCol = getLineColor(t, b);
+                        float angle = middleWavePosition.z * log(length(baseUv) + 1.0);
+                        vec2 ruv = baseUv * rotate(angle);
+                        col += lineCol * wave(ruv + vec2(middleLineDistance * fi + middleWavePosition.x, middleWavePosition.y), 2.0 + 0.15 * fi, baseUv, mouseUv, interactive);
+                    }
+                }
+                if (enableTop) {
+                    for (int i = 0; i < topLineCount; ++i) {
+                        float fi = float(i);
+                        float t = fi / max(float(topLineCount - 1), 1.0);
+                        vec3 lineCol = getLineColor(t, b);
+                        float angle = topWavePosition.z * log(length(baseUv) + 1.0);
+                        vec2 ruv = baseUv * rotate(angle);
+                        ruv.x *= -1.0;
+                        col += lineCol * wave(ruv + vec2(topLineDistance * fi + topWavePosition.x, topWavePosition.y), 1.0 + 0.2 * fi, baseUv, mouseUv, interactive) * 0.1;
+                    }
+                }
+                fragColor = vec4(col, 1.0);
+            }
+            void main() { vec4 color = vec4(0.0); mainImage(color, gl_FragCoord.xy); gl_FragColor = color; }
+        `;
+
+        const canvas = document.getElementById('bg-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: false, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        camera.position.z = 1;
+
+        const gradientColors = ['#ff00cc', '#ff0055', '#00ffff', '#ff8800', '#00ffaa'];
+        const lineGradient = gradientColors.map(c => {
+            const r = parseInt(c.slice(1,3), 16)/255;
+            const g = parseInt(c.slice(3,5), 16)/255;
+            const b = parseInt(c.slice(5,7), 16)/255;
+            return new THREE.Vector3(r, g, b);
+        });
+        while (lineGradient.length < 8) lineGradient.push(new THREE.Vector3(1,1,1));
+
+        const uniforms = {
+            iTime: { value: 0 },
+            iResolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) },
+            animationSpeed: { value: 0.8 },
+            enableTop: { value: true },
+            enableMiddle: { value: true },
+            enableBottom: { value: true },
+            topLineCount: { value: 5 },
+            middleLineCount: { value: 6 },
+            bottomLineCount: { value: 5 },
+            topLineDistance: { value: 0.08 },
+            middleLineDistance: { value: 0.12 },
+            bottomLineDistance: { value: 0.05 },
+            topWavePosition: { value: new THREE.Vector3(10.0, 0.5, -0.4) },
+            middleWavePosition: { value: new THREE.Vector3(5.0, 0.0, 0.2) },
+            bottomWavePosition: { value: new THREE.Vector3(2.0, -0.7, 0.4) },
+            iMouse: { value: new THREE.Vector2(-1000, -1000) },
+            interactive: { value: true },
+            bendRadius: { value: 5.0 },
+            bendStrength: { value: -0.5 },
+            bendInfluence: { value: 0 },
+            parallax: { value: true },
+            parallaxStrength: { value: 0.15 },
+            parallaxOffset: { value: new THREE.Vector2(0, 0) },
+            lineGradient: { value: lineGradient },
+            lineGradientCount: { value: gradientColors.length }
+        };
+
+        const material = new THREE.ShaderMaterial({ uniforms, vertexShader, fragmentShader });
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        let targetMouseX = -1000, targetMouseY = -1000;
+        let mouseX = -1000, mouseY = -1000;
+        let targetInfluence = 0, currentInfluence = 0;
+        let targetParallaxX = 0, targetParallaxY = 0;
+        let currentParallaxX = 0, currentParallaxY = 0;
+
+        const handleMouseMove = (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const dpr = renderer.getPixelRatio();
+            targetMouseX = x * dpr;
+            targetMouseY = (rect.height - y) * dpr;
+            targetInfluence = 1.0;
+            if (uniforms.parallax.value) {
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                targetParallaxX = ((x - centerX) / rect.width) * uniforms.parallaxStrength.value;
+                targetParallaxY = -((y - centerY) / rect.height) * uniforms.parallaxStrength.value;
+            }
+        };
+        const handleMouseLeave = () => { targetInfluence = 0.0; };
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseleave', handleMouseLeave);
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            uniforms.iResolution.value.set(window.innerWidth, window.innerHeight, 1);
+        });
+
+        let clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            uniforms.iTime.value += delta;
+            mouseX += (targetMouseX - mouseX) * 0.1;
+            mouseY += (targetMouseY - mouseY) * 0.1;
+            uniforms.iMouse.value.set(mouseX, mouseY);
+            currentInfluence += (targetInfluence - currentInfluence) * 0.1;
+            uniforms.bendInfluence.value = currentInfluence;
+            currentParallaxX += (targetParallaxX - currentParallaxX) * 0.1;
+            currentParallaxY += (targetParallaxY - currentParallaxY) * 0.1;
+            uniforms.parallaxOffset.value.set(currentParallaxX, currentParallaxY);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Live timestamp update
+        function updateTimestamps() {
+            const now = new Date();
+            const timeStr = now.toTimeString().slice(0,8);
+            document.getElementById('liveTimestamp').innerText = `[${timeStr}]`;
+            document.getElementById('planetaryTime').innerText = timeStr;
+            document.getElementById('dbTime').innerText = timeStr;
+        }
+        setInterval(updateTimestamps, 1000);
+        updateTimestamps();
+    </script>
+
+    <!-- Prediction Logic -->
+    <script>
+        const predictBtn = document.getElementById('predictBtn');
+        const magnitudeInput = document.getElementById('magnitude');
+        const depthInput = document.getElementById('depth');
+        const cdiInput = document.getElementById('cdi');
+        const mmiInput = document.getElementById('mmi');
+        const tsunamiSelect = document.getElementById('tsunami');
+        const resultArea = document.getElementById('resultArea');
+        const resultCard = document.getElementById('resultCard');
+        const alertTextSpan = document.getElementById('alertText');
+        const subRiskSpan = document.getElementById('subRisk');
+
+        predictBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+
+            const magnitude = magnitudeInput.value;
+            const depth = depthInput.value;
+            const cdi = cdiInput.value;
+            const mmi = mmiInput.value;
+            const tsunami = tsunamiSelect.value;
+
+            if (!magnitude || !depth || !cdi || !mmi || !tsunami) {
+                alert("⚠️ All fields required.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('magnitude', magnitude);
+            formData.append('depth', depth);
+            formData.append('cdi', cdi);
+            formData.append('mmi', mmi);
+            formData.append('tsunami', tsunami);
+
+            try {
+                const response = await fetch('/', { method: 'POST', body: formData });
+                const html = await response.text();
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                let prediction = null;
+                let alertColour = null;
+                let errorMsg = null;
+
+                const resultDiv = doc.querySelector('.result .alert-text');
+                const errorDiv = doc.querySelector('.error');
+
+                if (errorDiv) {
+                    errorMsg = errorDiv.innerText.trim();
+                    alert(errorMsg);
+                    return;
+                }
+
+                if (resultDiv) {
+                    prediction = resultDiv.innerText.trim();
+                    const colourClass = resultDiv.className.split(' ').find(c => ['green','yellow','orange','red'].includes(c));
+                    alertColour = colourClass ? colourClass.charAt(0).toUpperCase() + colourClass.slice(1) : null;
+                }
+
+                if (prediction) {
+                    resultCard.classList.remove('green','yellow','orange','red');
+                    if (alertColour) resultCard.classList.add(alertColour.toLowerCase());
+                    alertTextSpan.innerHTML = prediction;
+                    subRiskSpan.innerHTML = alertColour ? `>> ${alertColour.toUpperCase()} RISK CLASSIFICATION` : '';
+                    resultArea.style.display = 'block';
+                    document.getElementById('predictor').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('Prediction error.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Connection error.');
+            }
+        });
+    </script>
+</body>
+</html>
