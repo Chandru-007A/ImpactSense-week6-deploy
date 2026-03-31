@@ -102,6 +102,10 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/', methods=['GET', 'POST'])
+def index():
+    return redirect(url_for('login'))
+
+@app.route('/predict', methods=['GET', 'POST'])
 def predict():
     prediction = None
     alert_colour = None
